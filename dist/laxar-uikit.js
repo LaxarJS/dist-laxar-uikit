@@ -3,6 +3,11 @@
  * Released under the MIT license.
  * http://laxarjs.org/license
  */
+/**
+ * Utilities for dealing with the browser DOM.
+ *
+ * @module dom
+ */
 define( 'laxar-uikit/lib/dom',[], function() {
    'use strict';
 
@@ -78,6 +83,13 @@ define( 'laxar-uikit/lib/dom',[], function() {
 
    return {
 
+      /**
+       * Returns the name for the CSS `transform` property, correctly prefixed for the current browser. The
+       * result of the first call is cached and returned on the next call.
+       *
+       * @return {String}
+       *    the correct name for the `transform` CSS property
+       */
       cssTransformPropertyName: cssTransformPropertyName
 
    };
@@ -88,6 +100,11 @@ define( 'laxar-uikit/lib/dom',[], function() {
  * Copyright 2014 aixigo AG
  * Released under the MIT license.
  * http://laxarjs.org/license
+ */
+/**
+ * A module for formatting values of different types to strings.
+ *
+ * @module formatter
  */
 define( 'laxar-uikit/lib/formatter',[
    'laxar',
@@ -116,8 +133,7 @@ define( 'laxar-uikit/lib/formatter',[
          if( typeof number === 'string' && NUMERICAL_STRING_REGEXP.exec( number ) ) {
             number = parseFloat( number );
          }
-         else
-         if( typeof number !== 'number' ) {
+         else if( typeof number !== 'number' ) {
             throw new TypeError( 'Expected argument of type number, but got "' +
                typeof number + '". Value: ' + number );
          }
@@ -228,14 +244,17 @@ define( 'laxar-uikit/lib/formatter',[
        * value has the wrong type to be formatted using the configured `type`, the format function throws a
        * `TypeError`.
        *
-       * Note that date and time values are only accepted as simple ISO 8601 strings
-       * (http://en.wikipedia.org/wiki/ISO_8601). Possible input could thus be `'2014-03-12'` for a date
-       * and `'16:34:52'` for time, respectively.
+       * Note that date and time values are only accepted as simple
+       * [ISO 8601](http://en.wikipedia.org/wiki/ISO_8601) strings. Possible input could thus be
+       * `'2014-03-12'` for a date and `'16:34:52'` for time, respectively.
+       *
+       * The formatter for type `'string'` simply triggers the `toString` method of the given argument. `null`
+       * and `undefined` result in the empty string.
        *
        * @param {String} type
        *    the value type to create the formatter for. Can be one of `'string'`, `'integer'`, `'decimal'`,
        *    `'date'` and `'time'`
-       * @param {Object} optionalOptions
+       * @param {Object} [optionalOptions]
        *    different options depending on the selected `type`
        * @param {String} optionalOptions.groupingSeparator
        *    the character used for thousands separation. Applicable to types `decimal` and `integer` only.
@@ -252,7 +271,6 @@ define( 'laxar-uikit/lib/formatter',[
        *    - `'FIXED'`: uses a fraction length of exactly `decimalPlaces`, padding with zeros
        *    - `'BOUNDED'`: uses a fraction length up to `decimalPlaces`, no padding
        *    - `'NONE'`: unbounded fraction length (only limited by numeric precision), no padding
-       *
        *    Applicable to type `decimal` only.
        *    Default: `'FIXED'`
        * @param {String} optionalOptions.dateFormat
@@ -282,7 +300,12 @@ define( 'laxar-uikit/lib/formatter',[
 
 } );
 
-define( 'laxar-uikit/lib/moment_date_formats',{
+/**
+ * Copyright 2014 aixigo AG
+ * Released under the MIT license.
+ * http://laxarjs.org/license
+ */
+define( 'laxar-uikit/lib/moment_formats',{
    'en': {
       'date': 'MM/DD/YYYY',
       'time': 'h:mm A'
@@ -529,6 +552,11 @@ define( 'laxar-uikit/lib/moment_date_formats',{
    }
 } );
 
+/**
+ * Copyright 2014 aixigo AG
+ * Released under the MIT license.
+ * http://laxarjs.org/license
+ */
 define( 'laxar-uikit/lib/number_formats',{
    'en': {
       'g': ',',
@@ -775,38 +803,93 @@ define( 'laxar-uikit/lib/number_formats',{
       'd': '.'
    }
 } );
+
 /**
  * Copyright 2014 aixigo AG
  * Released under the MIT license.
  * http://laxarjs.org/license
  */
+/**
+ * Some utilities for working with i18n and finding the correct formats based on the configured language.
+ *
+ * @module i18n
+ */
 define( 'laxar-uikit/lib/i18n',[
    'laxar',
-   './moment_date_formats',
+   './moment_formats',
    './number_formats'
-], function( ax, i18nMomentDateFormats, i18nNumberFormats ) {
+], function( ax, momentFormats, numberFormats ) {
    'use strict';
 
    var DEFAULT_LANGUAGE_TAG = 'en';
 
+   /**
+    * Tries to find the language tag that is set for the current AngularJS scope. If no language tag could be
+    * determined, `'en'` is returned.
+    *
+    * @param {Object} scope
+    *    the scope to search for the `i18n` property
+    *
+    * @returns {String}
+    *    the language tag
+    */
    function languageTagFromScope( scope ) {
       return ax.i18n.languageTagFromI18n( scope.$eval( 'i18n' ) ) || DEFAULT_LANGUAGE_TAG;
    }
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+   /**
+    * Returns formats for usage with Moment.js for the given `languageTag`. The returned value is an object
+    * having the properties `date` and `time`, each with an according format string. If a language tag does
+    * not exist, `undefined` is returned instead.
+    *
+    * Example:
+    * ```js
+    * i18n.momentFormatForLanguageTag( 'de' ); // => { date: 'DD.MM.YYYY', time: 'HH:mm' }
+    * i18n.momentFormatForLanguageTag( 'en-gb' ); // => { date: 'DD/MM/YYYY', time: 'HH:mm' }
+    * i18n.momentFormatForLanguageTag( 'xy' ); // => undefined
+    * ```
+    *
+    * @param {String} languageTag
+    *    the language tag to return the moment format for
+    *
+    * @return {Object}
+    *    the moment format as defined above. `undefined` if not found
+    */
    function momentFormatForLanguageTag( languageTag ) {
-      return findMatchingFormat( i18nMomentDateFormats, languageTag );
+      return findMatchingFormat( momentFormats, languageTag );
    }
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+   /**
+    * Returns number formatting characters for the given `languageTag`. The returned value is an object having
+    * the properties `g` (grouping separator) and `d` (decimal separator), each with the according character
+    * to use for that language tag. If a language tag does not exist, `undefined` is returned instead.
+    *
+    * Example:
+    * ```js
+    * i18n.momentFormatForLanguageTag( 'de' ); // => { g: '.', d: ',' }
+    * i18n.momentFormatForLanguageTag( 'en-gb' ); // => { g: ',', d: '.' }
+    * i18n.momentFormatForLanguageTag( 'xy' ); // => undefined
+    * ```
+    *
+    * @param {String} languageTag
+    *    the language tag to return the moment format for
+    *
+    * @return {Object}
+    *    the number formatting characters as defined above. `undefined` if not found
+    */
    function numberFormatForLanguageTag( languageTag ) {
-      return findMatchingFormat( i18nNumberFormats, languageTag );
+      return findMatchingFormat( numberFormats, languageTag );
    }
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+   /**
+    * @private
+    */
    function findMatchingFormat( map, languageTag ) {
       return ax.i18n.localizeRelaxed( languageTag, map, map[ DEFAULT_LANGUAGE_TAG ] );
    }
@@ -824,10 +907,16 @@ define( 'laxar-uikit/lib/i18n',[
    };
 
 } );
+
 /**
  * Copyright 2014 aixigo AG
  * Released under the MIT license.
  * http://laxarjs.org/license
+ */
+/**
+ * A module for parsing strings to different value types.
+ *
+ * @module parser
  */
 define( 'laxar-uikit/lib/parser',[
    'laxar',
@@ -965,18 +1054,21 @@ define( 'laxar-uikit/lib/parser',[
        * the parsed value can be found under the attribute `value`.
        *
        * Note that results for types `date` and `time` are not returned as JavaScript type `Date` or wrapped
-       * otherwise, but are returned as simple ISO 8601 strings (http://en.wikipedia.org/wiki/ISO_8601). Thus
-       * a possible date would be `'2014-03-12'` and a time value `'16:34:52'`.
+       * otherwise, but as simple [ISO 8601](http://en.wikipedia.org/wiki/ISO_8601) strings. Thus a possible
+       * date would be `'2014-03-12'` and a time value `'16:34:52'`.
+       *
+       * The parser for type `'string'` will always return a successful result with the given input as the
+       * result's value.
        *
        * Example:
        * --------
        * Successful parsing:
-       * ```
+       * ```js
        * var parse = parser.create( 'decimal' );
        * parse( '1,435.56' ); // -> { ok: true, value: 1435.56 }
        * ```
        * Failed parsing:
-       * ```
+       * ```js
        * var parse = parser.create( 'date' );
        * parse( 'laxar' ); // -> { ok: false }
        * ```
@@ -984,7 +1076,7 @@ define( 'laxar-uikit/lib/parser',[
        * @param {String} type
        *    the value type to create the parser for. Can be one of `'string'`, `'integer'`, `'decimal'`,
        *    `'date'` and `'time'`
-       * @param {Object} optionalOptions
+       * @param {Object} [optionalOptions]
        *    different options depending on the selected `type`
        * @param {String} optionalOptions.groupingSeparator
        *    the character used for thousands separation. Applicable to types `decimal` and `integer` only.
@@ -994,10 +1086,11 @@ define( 'laxar-uikit/lib/parser',[
        *    Default: `'.'`
        * @param {String} optionalOptions.dateFormat
        *    the expected format for dates to parse. If the input doesn't match this format, the
-       *    `optionalOptions.dateFallbackFormats` are tried.
+       *    `optionalOptions.dateFallbackFormats` are tried. Applicable to type `date` only.
        *    Default: `'M/D/YYYY'`
        * @param {String} optionalOptions.dateFallbackFormats
-       *    formats to try, when parsing with the `optionalOptions.dateFormat` failed.
+       *    formats to try, when parsing with the `optionalOptions.dateFormat` failed. Applicable to type
+       *    `date` only.
        *    Default: `[ 'M/D/YY' ]`
        * @param {Number} optionalOptions.dateTwoDigitYearWrap
        *    the value to decide when parsing a two digit year, if the resulting year starts with `19` or with
@@ -1006,10 +1099,11 @@ define( 'laxar-uikit/lib/parser',[
        *    Default: `68`
        * @param {String} optionalOptions.timeFormat
        *    the expected format for times to parse. If the input doesn't match this format, the
-       *    `optionalOptions.timeFallbackFormats` are tried.
+       *    `optionalOptions.timeFallbackFormats` are tried. Applicable to type `time` only.
        *    Default: `'H:m'`
        * @param {String} optionalOptions.timeFallbackFormats
-       *    formats to try, when parsing with the `optionalOptions.timeFormat` failed.
+       *    formats to try, when parsing with the `optionalOptions.timeFormat` failed. Applicable to type
+       *    `time` only.
        *    Default: `[ 'H', 'HHmm' ]`
        *
        * @return {Function}
