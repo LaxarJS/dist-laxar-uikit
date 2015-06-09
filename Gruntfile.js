@@ -79,20 +79,12 @@ module.exports = function (grunt) {
       },
 
       copy: {
-         controls: {
+         'default': {
             expand: true,
             mode: true,
             timestamp: true,
             cwd: path.join( 'bower_components', pkg.name ),
-            src: 'controls/**',
-            dest: 'dist/'
-         },
-         themes: {
-            expand: true,
-            mode: true,
-            timestamp: true,
-            cwd: path.join( 'bower_components', pkg.name ),
-            src: [ 'themes/**', '!themes/*/{scss,compass}/**' ],
+            src: [ 'controls/**', 'themes/**' ],
             dest: 'dist/'
          }
       }
