@@ -84,7 +84,7 @@ module.exports = function (grunt) {
             mode: true,
             timestamp: true,
             cwd: path.join( 'bower_components', pkg.name ),
-            src: [ 'controls/**', 'themes/**' ],
+            src: [ 'controls/**', 'scss/**', 'themes/**' ],
             dest: 'dist/'
          }
       }
